@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Architect v2</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --bg:#e8eef4; --surface:#fff; --surface2:#f4f7fb; --surface3:#e4edf6;
+  --border:#ccd8e8; --border2:#aac0d8;
+  --text:#0c1a28; --dim:#4a6070; --muted:#90a8bc;
+  --azure:#0078d4; --azure2:#50a8e8; --azure3:#005a9e;
+  --cyan:#00b4d8; --green:#107c10; --purple:#7b42bc;
+  --red:#d83b01; --yellow:#ffb900;
+  --sh:0 2px 10px rgba(0,100,200,.10); --sh2:0 6px 24px rgba(0,100,200,.16);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;user-select:none;}
+header{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:50px;background:var(--azure3);border-bottom:3px solid var(--azure);flex-shrink:0;z-index:200;box-shadow:0 2px 14px rgba(0,60,140,.3);}
+.logo{display:flex;align-items:center;gap:8px;}
+.logo-d{display:flex;flex-direction:column;gap:2px;margin-right:2px;}
+.ld{width:8px;height:8px;transform:rotate(45deg);}
+.ld1{background:var(--azure2);}.ld2{background:var(--cyan);margin-left:5px;}
+.logo-text{font-size:17px;font-weight:700;letter-spacing:.08em;color:#fff;text-transform:uppercase;}
+.logo-text span{color:var(--cyan);}
+.logo-ver{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.4);margin-left:4px;align-self:flex-end;margin-bottom:2px;}
+.hbtns{display:flex;align-items:center;gap:5px;}
+.btn{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:5px 12px;border-radius:3px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);cursor:pointer;transition:all .15s;}
+.btn:hover{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.4);}
+.btn-az{background:var(--azure);border-color:var(--azure2);color:#fff;}.btn-az:hover{background:var(--azure2);}
+.btn-tf{background:var(--purple);border-color:#9b62dc;color:#fff;}.btn-tf:hover{background:#9b62dc;}
+.btn-go{background:var(--cyan);border-color:var(--cyan);color:#000;font-weight:700;}.btn-go:hover{background:#00c9f0;}
+.workspace{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:190px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
+.sbs{border-bottom:1px solid var(--border);}
+.sbt{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:8px 10px 5px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:5px;}
+.sbt::before{content:'';display:block;width:2px;height:10px;background:var(--azure);border-radius:1px;}
+.ci{display:flex;align-items:center;gap:7px;padding:5px 10px;cursor:grab;transition:background .1s;}
+.ci:hover{background:var(--surface3);}.ci:active{cursor:grabbing;}
+.cico{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;border:1px solid transparent;}
+.clbl{font-size:11px;font-weight:600;color:var(--text);line-height:1.2;}
+.csub{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);margin-top:1px;}
+.ci.is-cont .clbl{color:var(--azure3);font-weight:700;}
+#canvas-wrap{flex:1;position:relative;overflow:hidden;
+  background:linear-gradient(rgba(0,100,200,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,100,200,.055) 1px,transparent 1px),var(--bg);
+  background-size:40px 40px;}
+#canvas{position:absolute;inset:0;transform-origin:0 0;}
+#svgl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;}
+.node{position:absolute;border-radius:6px;border:1.5px solid var(--border2);background:var(--surface);box-shadow:var(--sh);cursor:move;}
+.node:hover{border-color:var(--azure);box-shadow:var(--sh2);z-index:50;}
+.node.sel{border-color:var(--azure)!important;box-shadow:0 0 0 2px rgba(0,120,212,.3),var(--sh2)!important;z-index:60!important;}
+.ninner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 12px 8px;pointer-events:none;}
+.nico{width:34px;height:34px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.nlbl{font-size:11px;font-weight:600;color:var(--text);text-align:center;white-space:nowrap;}
+.nid{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);text-align:center;white-space:nowrap;}
+.ndel{position:absolute;top:-7px;right:-7px;width:16px;height:16px;background:var(--red);border-radius:50%;border:none;color:#fff;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:100;pointer-events:all;}
+.node:hover .ndel,.node.sel .ndel{display:flex;}
+.node.is-cont{border-radius:8px;border-style:dashed;border-width:2px;background:transparent;min-width:200px;min-height:160px;}
+.node.is-cont .ninner{position:absolute;top:0;left:0;right:0;flex-direction:row;align-items:center;gap:6px;padding:7px 10px;background:transparent;pointer-events:none;}
+.node.is-cont .nico{width:18px;height:18px;font-size:11px;border-radius:3px;}
+.node.is-cont .nid{display:none;}
+.node.t-rg{border-color:rgba(0,90,158,.4);background:rgba(0,90,158,.025);}
+.node.t-rg .ninner{background:rgba(0,90,158,.07);border-bottom:1px dashed rgba(0,90,158,.2);border-radius:6px 6px 0 0;}
+.node.t-rg .nlbl{color:var(--azure3);}
+.node.t-vnet{border-color:rgba(0,150,200,.45);background:rgba(0,150,200,.025);}
+.node.t-vnet .ninner{background:rgba(0,150,200,.07);border-bottom:1px dashed rgba(0,150,200,.25);border-radius:6px 6px 0 0;}
+.node.t-vnet .nlbl{color:#006f8a;}
+.node.t-subnet{border-color:rgba(16,124,16,.4);background:rgba(16,124,16,.025);}
+.node.t-subnet .ninner{background:rgba(16,124,16,.07);border-bottom:1px dashed rgba(16,124,16,.2);border-radius:6px 6px 0 0;}
+.node.t-subnet .nlbl{color:var(--green);}
+.node.t-subnet.subnet-public{border-color:rgba(245,158,11,.55);background:rgba(245,158,11,.03);}
+.node.t-subnet.subnet-public .ninner{background:rgba(245,158,11,.08);border-bottom:1px dashed rgba(245,158,11,.3);border-radius:6px 6px 0 0;}
+.node.t-subnet.subnet-public .nlbl{color:#b45309;}
+.subnet-badge{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:1px 5px;border-radius:8px;margin-left:4px;letter-spacing:.06em;pointer-events:none;}
+.subnet-badge.public{background:rgba(245,158,11,.15);color:#b45309;border:1px solid rgba(245,158,11,.35);}
+.subnet-badge.private{background:rgba(16,124,16,.12);color:#166534;border:1px solid rgba(16,124,16,.3);}
+.rh{position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:se-resize;z-index:80;pointer-events:all;display:none;}
+.is-cont .rh{display:block;}
+.rh::after{content:'';position:absolute;bottom:3px;right:3px;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);border-radius:0 0 2px 0;}
+.att-line{stroke:var(--azure);stroke-width:1.5;fill:none;stroke-dasharray:5 3;opacity:.65;animation:flow .9s linear infinite;}
+@keyframes flow{to{stroke-dashoffset:-16;}}
+.adot{fill:var(--azure);opacity:.7;}
+.props-panel{width:218px;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;box-shadow:-2px 0 8px rgba(0,0,0,.04);}
+.props-panel::-webkit-scrollbar{width:3px;}.props-panel::-webkit-scrollbar-thumb{background:var(--border2);}
+.phdr{padding:12px 13px;border-bottom:3px solid var(--azure);background:linear-gradient(135deg,var(--azure3),var(--azure));}
+.ptitle{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+.pname{font-size:14px;font-weight:700;color:#fff;letter-spacing:.03em;margin-top:2px;}
+.pparent{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;}
+.pbody{padding:11px 13px;flex:1;}
+.pr{margin-bottom:9px;}
+.plbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:3px;}
+.pinp{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:5px 7px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);outline:none;transition:border-color .15s;}
+.pinp:focus{border-color:var(--azure);box-shadow:0 0 0 2px rgba(0,120,212,.1);}
+.psel{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:3px;padding:5px 7px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);outline:none;cursor:pointer;}
+.pempty{padding:22px 13px;text-align:center;color:var(--muted);font-size:12px;line-height:1.7;}
+.phint{font-size:28px;margin-bottom:8px;opacity:.3;}
+.psec{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--azure);margin:12px 0 7px;padding-bottom:3px;border-bottom:1px solid var(--surface3);}
+.ctag{display:inline-flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;background:rgba(0,120,212,.07);border:1px solid rgba(0,120,212,.18);border-radius:10px;color:var(--azure);margin:2px;}
+.toolbar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:3px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 7px;z-index:100;box-shadow:var(--sh2);}
+.tbtn{width:30px;height:30px;border-radius:4px;border:none;background:transparent;color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .1s;}
+.tbtn:hover{background:var(--surface3);color:var(--text);}.tbtn.active{background:rgba(0,120,212,.1);color:var(--azure);}
+.tdiv{width:1px;height:18px;background:var(--border);margin:0 3px;}
+.tlbl{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--muted);padding:0 4px;text-transform:uppercase;}
+.statusbar{display:flex;align-items:center;justify-content:space-between;padding:0 13px;height:24px;background:var(--azure3);font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,.5);flex-shrink:0;}
+.stitem{display:flex;align-items:center;gap:5px;}
+.stdot{width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 4px var(--cyan);}
+.modal-ov{position:fixed;inset:0;background:rgba(8,18,32,.6);display:flex;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(5px);opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-top:4px solid var(--azure);border-radius:8px;width:640px;max-width:calc(100vw - 28px);max-height:86vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,80,160,.22);transform:translateY(10px);transition:transform .2s;}
+.modal-ov.open .modal{transform:translateY(0);}
+.mhdr{padding:15px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,#f0f6ff,#fff);}
+.mtitle{font-size:15px;font-weight:700;letter-spacing:.04em;color:var(--azure3);display:flex;align-items:center;gap:8px;}
+.mx{width:25px;height:25px;border-radius:4px;border:1px solid var(--border);background:var(--surface2);color:var(--dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;}
+.mx:hover{background:var(--surface3);}
+.mbody{padding:15px 20px;}
+.tabrow{display:flex;gap:1px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:10px;}
+.tabbtn{flex:1;padding:6px 8px;border:none;background:var(--surface2);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);cursor:pointer;transition:all .1s;}
+.tabbtn.active{background:var(--azure);color:#fff;}.tabbtn:hover:not(.active){background:var(--surface3);}
+.codebox{background:#1a2434;border:1px solid #2a3a50;border-radius:5px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.75;color:#94a3b8;white-space:pre-wrap;word-break:break-all;max-height:290px;overflow-y:auto;}
+.codebox::-webkit-scrollbar{width:4px;}.codebox::-webkit-scrollbar-thumb{background:#2d3f55;}
+.kw{color:#60a5fa;}.str{color:#34d399;}.cm{color:#475569;}.tp{color:#fbbf24;}
+.depsteps{display:flex;flex-direction:column;gap:5px;margin-top:11px;}
+.ds{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:5px;border:1px solid var(--border);font-size:13px;font-weight:600;color:var(--dim);background:var(--surface2);transition:all .3s;}
+.ds.active{border-color:rgba(0,120,212,.4);color:var(--azure);background:rgba(0,120,212,.05);}
+.ds.done{border-color:rgba(16,124,16,.3);color:var(--green);background:rgba(16,124,16,.05);}
+.ds.pending{opacity:.4;}
+.spin{display:inline-block;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.mftr{padding:11px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:7px;background:var(--surface2);}
+.mftr .btn{color:var(--dim);border-color:var(--border);background:var(--surface);}.mftr .btn:hover{color:var(--text);}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-d"><div class="ld ld1"></div><div class="ld ld2"></div></div>
+    <div class="logo-text">Azure<span>Architect</span></div>
+    <div class="logo-ver">v1.0</div>
+  </div>
+  <div class="hbtns">
+    <button class="btn" onclick="clearAll()">Clear</button>
+    <button class="btn btn-tf" onclick="exportCode('terraform')">↓ Terraform</button>
+  </div>
+</header>
+<div class="workspace">
+<aside class="sidebar">
+  <div class="sbs">
+    <div class="sbt">Containers (resizable)</div>
+    <div class="ci is-cont" draggable="true" data-type="resourcegroup"><div class="cico" style="background:#e8f0ff;border-color:#b0ccf0">📦</div><div><div class="clbl">Resource Group</div><div class="csub">Top-level boundary</div></div></div>
+    <div class="ci is-cont" draggable="true" data-type="vnet"><div class="cico" style="background:#e0f6ff;border-color:#90daf0">🌐</div><div><div class="clbl">Virtual Network</div><div class="csub">Address space</div></div></div>
+    <div class="ci is-cont" draggable="true" data-type="subnet"><div class="cico" style="background:#e8fff0;border-color:#90e8b0">⬡</div><div><div class="clbl">Subnet</div><div class="csub">IP range slice</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Networking</div>
+    <div class="ci" draggable="true" data-type="nsg"><div class="cico" style="background:#fff0e4;border-color:#f8c090">🛡</div><div><div class="clbl">NSG</div><div class="csub">Security rules</div></div></div>
+    <div class="ci" draggable="true" data-type="pip"><div class="cico" style="background:#f0e8ff;border-color:#d0a0f8">🔵</div><div><div class="clbl">Public IP</div><div class="csub">Static / Dynamic</div></div></div>
+    <div class="ci" draggable="true" data-type="natgw"><div class="cico" style="background:#e8eeff;border-color:#b0c0f8">🔀</div><div><div class="clbl">NAT Gateway</div><div class="csub">Outbound NAT</div></div></div>
+    <div class="ci" draggable="true" data-type="routetable"><div class="cico" style="background:#fff8e0;border-color:#f0dc90">📋</div><div><div class="clbl">Route Table</div><div class="csub">UDR routing</div></div></div>
+    <div class="ci" draggable="true" data-type="vpngw"><div class="cico" style="background:#e8f0ff;border-color:#b0c8f8">🔒</div><div><div class="clbl">VPN Gateway</div><div class="csub">S2S / P2S</div></div></div>
+    <div class="ci" draggable="true" data-type="privatedns"><div class="cico" style="background:#e8ffe8;border-color:#90e890">🔤</div><div><div class="clbl">Private DNS</div><div class="csub">Zone resolution</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Compute</div>
+    <div class="ci" draggable="true" data-type="vm"><div class="cico" style="background:#e4f0ff;border-color:#a0ccf0">💻</div><div><div class="clbl">Virtual Machine</div><div class="csub">IaaS compute</div></div></div>
+    <div class="ci" draggable="true" data-type="vmss"><div class="cico" style="background:#e8f8ff;border-color:#a0e0f8">⊞</div><div><div class="clbl">VM Scale Set</div><div class="csub">Auto-scale</div></div></div>
+    <div class="ci" draggable="true" data-type="function"><div class="cico" style="background:#fff0e4;border-color:#f8c090">λ</div><div><div class="clbl">Azure Functions</div><div class="csub">Serverless</div></div></div>
+    <div class="ci" draggable="true" data-type="aks"><div class="cico" style="background:#e8ecff;border-color:#b0bcf8">⚙</div><div><div class="clbl">AKS</div><div class="csub">Kubernetes</div></div></div>
+    <div class="ci" draggable="true" data-type="aci"><div class="cico" style="background:#eefff4;border-color:#a0f0c0">📦</div><div><div class="clbl">Container Instance</div><div class="csub">ACI</div></div></div>
+    <div class="ci" draggable="true" data-type="appservice"><div class="cico" style="background:#e4f0ff;border-color:#a0c8f8">🌐</div><div><div class="clbl">App Service</div><div class="csub">PaaS web host</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Data &amp; Storage</div>
+    <div class="ci" draggable="true" data-type="storage"><div class="cico" style="background:#fff8dc;border-color:#f0d860">🪣</div><div><div class="clbl">Storage Account</div><div class="csub">Blob/File/Queue</div></div></div>
+    <div class="ci" draggable="true" data-type="sqldb"><div class="cico" style="background:#e4f0ff;border-color:#a0ccf0">🗄</div><div><div class="clbl">Azure SQL</div><div class="csub">Managed SQL</div></div></div>
+    <div class="ci" draggable="true" data-type="cosmos"><div class="cico" style="background:#f4e8ff;border-color:#c898f8">⚡</div><div><div class="clbl">Cosmos DB</div><div class="csub">Global NoSQL</div></div></div>
+    <div class="ci" draggable="true" data-type="redis"><div class="cico" style="background:#ffe8e4;border-color:#f8a090">💾</div><div><div class="clbl">Redis Cache</div><div class="csub">In-memory</div></div></div>
+    <div class="ci" draggable="true" data-type="postgre"><div class="cico" style="background:#e8ecff;border-color:#b0bcf8">🐘</div><div><div class="clbl">PostgreSQL</div><div class="csub">Flexible server</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Load Balancing</div>
+    <div class="ci" draggable="true" data-type="alb"><div class="cico" style="background:#e8ecff;border-color:#b0bcf8">⚖</div><div><div class="clbl">Load Balancer</div><div class="csub">L4 distribution</div></div></div>
+    <div class="ci" draggable="true" data-type="agw"><div class="cico" style="background:#fff0e4;border-color:#f8b880">🔀</div><div><div class="clbl">App Gateway</div><div class="csub">WAF + L7</div></div></div>
+    <div class="ci" draggable="true" data-type="frontdoor"><div class="cico" style="background:#e8fff4;border-color:#90f0c0">🌍</div><div><div class="clbl">Front Door</div><div class="csub">Global CDN</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Messaging</div>
+    <div class="ci" draggable="true" data-type="servicebus"><div class="cico" style="background:#fff0e4;border-color:#f8b880">📬</div><div><div class="clbl">Service Bus</div><div class="csub">Enterprise msg</div></div></div>
+    <div class="ci" draggable="true" data-type="eventhub"><div class="cico" style="background:#f4e8ff;border-color:#c898f8">⚡</div><div><div class="clbl">Event Hub</div><div class="csub">Streaming</div></div></div>
+    <div class="ci" draggable="true" data-type="eventgrid"><div class="cico" style="background:#e8fff8;border-color:#90f0d0">📡</div><div><div class="clbl">Event Grid</div><div class="csub">Event routing</div></div></div>
+  </div>
+  <div class="sbs">
+    <div class="sbt">Security &amp; Monitoring</div>
+    <div class="ci" draggable="true" data-type="keyvault"><div class="cico" style="background:#fff8dc;border-color:#f0d860">🔐</div><div><div class="clbl">Key Vault</div><div class="csub">Secrets &amp; certs</div></div></div>
+    <div class="ci" draggable="true" data-type="managedid"><div class="cico" style="background:#ffe8e4;border-color:#f8a090">🪪</div><div><div class="clbl">Managed Identity</div><div class="csub">Service identity</div></div></div>
+    <div class="ci" draggable="true" data-type="loganalytics"><div class="cico" style="background:#e4f0ff;border-color:#a0ccf0">🔍</div><div><div class="clbl">Log Analytics</div><div class="csub">Workspace</div></div></div>
+    <div class="ci" draggable="true" data-type="appinsights"><div class="cico" style="background:#f4e8ff;border-color:#c898f8">💡</div><div><div class="clbl">App Insights</div><div class="csub">APM telemetry</div></div></div>
+  </div>
+</aside>
+
+<div id="canvas-wrap">
+  <div id="canvas">
+    <svg id="svgl">
+      <defs>
+        <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 z" fill="var(--azure)" opacity=".7"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+  <div class="toolbar">
+    <div class="tlbl">Tool</div>
+    <button class="tbtn active" id="tool-select" onclick="setTool('select')" title="Select (S)">↖</button>
+    <button class="tbtn" id="tool-connect" onclick="setTool('connect')" title="Connect (C)">⟶</button>
+    <div class="tdiv"></div>
+    <button class="tbtn" onclick="doZoom(1.15)" title="Zoom In">+</button>
+    <button class="tbtn" onclick="doZoom(.87)" title="Zoom Out">−</button>
+    <button class="tbtn" onclick="resetView()" title="Reset">⊡</button>
+    <div class="tdiv"></div>
+    <button class="tbtn" onclick="deleteSelected()" title="Delete (Del)" style="color:var(--red)">🗑</button>
+  </div>
+</div>
+
+<aside class="props-panel">
+  <div class="phdr">
+    <div class="ptitle">Properties</div>
+    <div class="pname" id="pname">No Selection</div>
+    <div class="pparent" id="pparent"></div>
+  </div>
+  <div class="pbody" id="pbody">
+    <div class="pempty"><div class="phint">⚙</div>Click any resource to configure.<br><br>Drop resources <b>inside</b> containers — the generated Bicep/ARM/Terraform will reference the correct parent.<br><br>Use <b>Connect</b> to wire resources.</div>
+  </div>
+</aside>
+</div>
+
+<div class="statusbar">
+  <div class="stitem"><div class="stdot"></div><span id="stmsg">Ready — drag resources onto canvas</span></div>
+  <div class="stitem"><span id="stcounts">0 resources · 0 connections</span></div>
+</div>
+
+<div class="modal-ov" id="mmodal">
+  <div class="modal">
+    <div class="mhdr">
+      <div class="mtitle">▶ Deploy to Azure</div>
+      <button class="mx" onclick="closeDeploy()">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="twocol">
+        <div><div class="plbl">Subscription</div><input class="pinp" value="My Azure Subscription" id="dsub"></div>
+        <div><div class="plbl">Region</div>
+          <select class="psel" id="dreg">
+            <option>West Europe</option><option>East US</option><option>East US 2</option>
+            <option>West US 2</option><option>North Europe</option><option>Southeast Asia</option><option>Japan East</option>
+          </select>
+        </div>
+      </div>
+      <div class="tabrow">
+        <button class="tabbtn active" onclick="switchTab('bicep')">Bicep</button>
+        <button class="tabbtn" onclick="switchTab('arm')">ARM JSON</button>
+        <button class="tabbtn" onclick="switchTab('terraform')">Terraform</button>
+      </div>
+      <div class="plbl">Generated Template</div>
+      <div class="codebox" id="cprev"></div>
+      <div class="depsteps" id="dsteps" style="display:none">
+        <div class="ds pending" id="ds0"><span>📋</span> Validating template</div>
+        <div class="ds pending" id="ds1"><span>📦</span> Verifying Resource Group</div>
+        <div class="ds pending" id="ds2"><span>🔍</span> What-if analysis</div>
+        <div class="ds pending" id="ds3"><span>⚡</span> Deploying resources</div>
+        <div class="ds pending" id="ds4"><span>✅</span> Deployment complete</div>
+      </div>
+    </div>
+    <div class="mftr">
+      <button class="btn" onclick="closeDeploy()" id="dcncl">Cancel</button>
+      <button class="btn btn-go" onclick="runDeploy()" id="ddeploy">Deploy ▶</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════ STATE ══════
+let nodes=[],connections=[],selId=null,tool='select',connFrom=null,counter={};
+let dragging=null,resizing=null;
+let cxS=1,cxX=0,cxY=0;
+let activeTab='bicep',deploying=false;
+const cvWrap=document.getElementById('canvas-wrap');
+const canvas=document.getElementById('canvas');
+const svgl=document.getElementById('svgl');
+
+// ══════ COMPONENT DEFS ══════
+const CTYPES=new Set(['resourcegroup','vnet','subnet']);
+const C={
+  resourcegroup:{label:'Resource Group',icon:'📦',bg:'#e8f0ff',bd:'#b0ccf0'},
+  vnet:         {label:'Virtual Network',icon:'🌐',bg:'#e0f6ff',bd:'#90daf0'},
+  subnet:       {label:'Subnet',icon:'⬡',bg:'#e8fff0',bd:'#90e8b0'},
+  nsg:          {label:'NSG',icon:'🛡',bg:'#fff0e4',bd:'#f8c090'},
+  pip:          {label:'Public IP',icon:'🔵',bg:'#f0e8ff',bd:'#d0a0f8'},
+  natgw:        {label:'NAT Gateway',icon:'🔀',bg:'#e8eeff',bd:'#b0c0f8'},
+  routetable:   {label:'Route Table',icon:'📋',bg:'#fff8e0',bd:'#f0dc90'},
+  vpngw:        {label:'VPN Gateway',icon:'🔒',bg:'#e8f0ff',bd:'#b0c8f8'},
+  privatedns:   {label:'Private DNS',icon:'🔤',bg:'#e8ffe8',bd:'#90e890'},
+  vm:           {label:'Virtual Machine',icon:'💻',bg:'#e4f0ff',bd:'#a0ccf0'},
+  vmss:         {label:'VM Scale Set',icon:'⊞',bg:'#e8f8ff',bd:'#a0e0f8'},
+  function:     {label:'Azure Functions',icon:'λ',bg:'#fff0e4',bd:'#f8c090'},
+  aks:          {label:'AKS',icon:'⚙',bg:'#e8ecff',bd:'#b0bcf8'},
+  aci:          {label:'Container Inst.',icon:'📦',bg:'#eefff4',bd:'#a0f0c0'},
+  appservice:   {label:'App Service',icon:'🌐',bg:'#e4f0ff',bd:'#a0c8f8'},
+  storage:      {label:'Storage Account',icon:'🪣',bg:'#fff8dc',bd:'#f0d860'},
+  sqldb:        {label:'Azure SQL',icon:'🗄',bg:'#e4f0ff',bd:'#a0ccf0'},
+  cosmos:       {label:'Cosmos DB',icon:'⚡',bg:'#f4e8ff',bd:'#c898f8'},
+  redis:        {label:'Redis Cache',icon:'💾',bg:'#ffe8e4',bd:'#f8a090'},
+  postgre:      {label:'PostgreSQL',icon:'🐘',bg:'#e8ecff',bd:'#b0bcf8'},
+  alb:          {label:'Load Balancer',icon:'⚖',bg:'#e8ecff',bd:'#b0bcf8'},
+  agw:          {label:'App Gateway',icon:'🔀',bg:'#fff0e4',bd:'#f8b880'},
+  frontdoor:    {label:'Front Door',icon:'🌍',bg:'#e8fff4',bd:'#90f0c0'},
+  servicebus:   {label:'Service Bus',icon:'📬',bg:'#fff0e4',bd:'#f8b880'},
+  eventhub:     {label:'Event Hub',icon:'⚡',bg:'#f4e8ff',bd:'#c898f8'},
+  eventgrid:    {label:'Event Grid',icon:'📡',bg:'#e8fff8',bd:'#90f0d0'},
+  keyvault:     {label:'Key Vault',icon:'🔐',bg:'#fff8dc',bd:'#f0d860'},
+  managedid:    {label:'Managed Identity',icon:'🪪',bg:'#ffe8e4',bd:'#f8a090'},
+  loganalytics: {label:'Log Analytics',icon:'🔍',bg:'#e4f0ff',bd:'#a0ccf0'},
+  appinsights:  {label:'App Insights',icon:'💡',bg:'#f4e8ff',bd:'#c898f8'},
+};
+const DEF={
+  resourcegroup:{location:'westeurope'},
+  vnet:{addressSpace:'10.0.0.0/16',location:'westeurope'},
+  subnet:{addressPrefix:'10.0.1.0/24',subnetType:'private'},
+  nsg:{inboundPort:'80,443'},
+  pip:{sku:'Standard',allocationMethod:'Static'},
+  natgw:{idleTimeoutMinutes:'4'},
+  routetable:{destination:'0.0.0.0/0',nextHop:'Internet'},
+  vpngw:{sku:'VpnGw1',vpnType:'RouteBased'},
+  privatedns:{zoneName:'internal.example.com'},
+  vm:{size:'Standard_D2s_v3',adminUser:'azureuser',inboundPorts:'22,80,443',outboundPorts:'*'},
+  vmss:{sku:'Standard_B2s',capacity:'2'},
+  function:{runtime:'dotnet',version:'8',sku:'Y1'},
+  aks:{kubernetesVersion:'1.28',nodeCount:'3',nodeSize:'Standard_D2s_v3'},
+  aci:{cpu:'1',memoryGb:'1.5',osType:'Linux'},
+  appservice:{sku:'S1',runtime:'NODE|20-lts'},
+  storage:{sku:'Standard_LRS',kind:'StorageV2',accessTier:'Hot'},
+  sqldb:{adminLogin:'sqladmin',maxSizeGb:'250'},
+  cosmos:{kind:'GlobalDocumentDB',consistency:'Session'},
+  redis:{sku:'Basic',capacity:'1'},
+  postgre:{version:'15',sku:'Standard_D2s_v3',storageSizeGb:'32'},
+  alb:{sku:'Standard',frontendPort:'80'},
+  agw:{sku:'WAF_v2',capacity:'2'},
+  frontdoor:{sku:'Standard_AzureFrontDoor'},
+  servicebus:{sku:'Standard'},
+  eventhub:{sku:'Standard',partitionCount:'4'},
+  eventgrid:{inputSchema:'EventGridSchema'},
+  keyvault:{sku:'standard',softDelete:'true',purgeProtection:'false'},
+  managedid:{},
+  loganalytics:{sku:'PerGB2018',retentionDays:'30'},
+  appinsights:{applicationType:'web'},
+};
+const TFTYPE={
+  resourcegroup:'azurerm_resource_group',vnet:'azurerm_virtual_network',subnet:'azurerm_subnet',
+  nsg:'azurerm_network_security_group',pip:'azurerm_public_ip',natgw:'azurerm_nat_gateway',
+  routetable:'azurerm_route_table',vpngw:'azurerm_virtual_network_gateway',
+  privatedns:'azurerm_private_dns_zone',vm:'azurerm_linux_virtual_machine',
+  vmss:'azurerm_linux_virtual_machine_scale_set',function:'azurerm_linux_function_app',
+  aks:'azurerm_kubernetes_cluster',aci:'azurerm_container_group',
+  appservice:'azurerm_linux_web_app',storage:'azurerm_storage_account',
+  sqldb:'azurerm_mssql_server',cosmos:'azurerm_cosmosdb_account',
+  redis:'azurerm_redis_cache',postgre:'azurerm_postgresql_flexible_server',
+  alb:'azurerm_lb',agw:'azurerm_application_gateway',frontdoor:'azurerm_cdn_frontdoor_profile',
+  servicebus:'azurerm_servicebus_namespace',eventhub:'azurerm_eventhub_namespace',
+  eventgrid:'azurerm_eventgrid_topic',keyvault:'azurerm_key_vault',
+  managedid:'azurerm_user_assigned_identity',loganalytics:'azurerm_log_analytics_workspace',
+  appinsights:'azurerm_application_insights',
+};
+
+// ══════ DRAG FROM SIDEBAR ══════
+let sbDragType=null;
+document.querySelectorAll('.ci[draggable]').forEach(el=>{
+  el.addEventListener('dragstart',e=>{sbDragType=el.dataset.type;e.dataTransfer.effectAllowed='copy';e.dataTransfer.setData('text/plain',sbDragType);});
+});
+cvWrap.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});
+cvWrap.addEventListener('drop',e=>{
+  e.preventDefault();
+  const type=e.dataTransfer.getData('text/plain')||sbDragType;
+  if(!type||!C[type])return;
+  const r=cvWrap.getBoundingClientRect();
+  const x=(e.clientX-r.left-cxX)/cxS-50;
+  const y=(e.clientY-r.top-cxY)/cxS-40;
+  addNode(type,Math.max(0,x),Math.max(0,y));
+});
+
+// ══════ ADD NODE ══════
+function addNode(type,x,y){
+  counter[type]=(counter[type]||0)+1;
+  const id=type+counter[type];
+  const isCont=CTYPES.has(type);
+  const n={id,type,x,y,w:isCont?280:100,h:isCont?200:90,props:{name:id,...DEF[type]},parentId:null,children:[]};
+  nodes.push(n);
+  // Auto-detect parent container on initial drop — works for ALL node types including containers
+  const par=findContainer(n.x+n.w/2,n.y+n.h/2,id);
+  if(par){
+    const cH={resourcegroup:0,vnet:1,subnet:2};
+    const ok = !CTYPES.has(n.type) || (CTYPES.has(par.type) && cH[par.type]<cH[n.type]);
+    if(ok) adopt(par.id,id);
+  }
+  renderNode(n); renderLines(); updateSt();
+  setMsg(`Added ${C[type].label}`);
+  selectNode(id);
+}
+function adopt(pid,cid){
+  const p=gn(pid),c=gn(cid);if(!p||!c)return;
+  if(c.parentId){const o=gn(c.parentId);if(o)o.children=o.children.filter(x=>x!==cid);}
+  c.parentId=pid;if(!p.children.includes(cid))p.children.push(cid);
+}
+function findContainer(cx,cy,excl){
+  let best=null,bestA=Infinity;
+  for(const n of nodes){
+    if(n.id===excl||!CTYPES.has(n.type))continue;
+    if(cx>=n.x&&cx<=n.x+n.w&&cy>=n.y&&cy<=n.y+n.h){const a=n.w*n.h;if(a<bestA){bestA=a;best=n;}}
+  }
+  return best;
+}
+function gn(id){return nodes.find(n=>n.id===id);}
+
+// ══════ RENDER NODE ══════
+function renderNode(n){
+  let el=document.getElementById('n'+n.id);
+  const isCont=CTYPES.has(n.type);
+  if(!el){
+    el=document.createElement('div');
+    el.id='n'+n.id;
+    el.className=`node${isCont?' is-cont':''} t-${n.type}`;
+    el.innerHTML=`
+      <div class="ninner">
+        <div class="nico" style="background:${C[n.type].bg};border:1px solid ${C[n.type].bd}">${C[n.type].icon}</div>
+        <div class="nlbl">${n.type.includes('?')?n.type:C[n.type].label}</div>
+        ${!isCont?`<div class="nid">${n.id}</div>`:''}
+      </div>
+      ${isCont?`<div class="rh" data-rid="${n.id}"></div>`:''}
+      <button class="ndel" onclick="deleteNode('${n.id}')">✕</button>`;
+    canvas.appendChild(el);
+    el.addEventListener('mousedown',e=>onMD(e,n.id));
+    el.addEventListener('click',e=>{e.stopPropagation();tool==='connect'?handleConn(n.id):selectNode(n.id);});
+  }
+  el.style.left=n.x+'px'; el.style.top=n.y+'px';
+  if(isCont){el.style.width=n.w+'px';el.style.height=n.h+'px';}
+  el.style.zIndex=n.type==='resourcegroup'?1:n.type==='vnet'?2:n.type==='subnet'?3:10;
+  if(isCont){
+    const lb=el.querySelector('.nlbl');
+    if(lb){
+      const childCount = n.children.length;
+      const countStr = childCount > 0 ? ` (${childCount})` : '';
+      if(n.type==='subnet'){
+        const isPublic = n.props.subnetType === 'public';
+        el.classList.toggle('subnet-public', isPublic);
+        el.classList.toggle('subnet-private', !isPublic);
+        lb.innerHTML = `${C[n.type].label} · ${n.props.name||n.id}${countStr} <span class="subnet-badge ${isPublic?'public':'private'}">${isPublic?'PUBLIC':'PRIVATE'}</span>`;
+      } else {
+        lb.textContent = `${C[n.type].label} · ${n.props.name||n.id}${countStr}`;
+      }
+    }
+  }
+  el.classList.toggle('sel',selId===n.id);
+}
+function reRender(){nodes.forEach(n=>renderNode(n));renderLines();}
+
+// ══════ MOUSE ══════
+function onMD(e,id){
+  if(tool==='connect'||e.button!==0)return;
+  if(e.target.classList.contains('ndel'))return;
+  if(e.target.classList.contains('rh')||e.target.dataset.rid){
+    const n=gn(id);
+    resizing={id,sx:e.clientX,sy:e.clientY,sw:n.w,sh:n.h};
+    e.stopPropagation();e.preventDefault();return;
+  }
+  const el=document.getElementById('n'+id),r=el.getBoundingClientRect();
+  dragging={id,ox:(e.clientX-r.left)/cxS,oy:(e.clientY-r.top)/cxS};
+  e.stopPropagation();e.preventDefault();
+}
+document.addEventListener('mousemove',e=>{
+  if(resizing){
+    const n=gn(resizing.id);
+    n.w=Math.max(160,resizing.sw+(e.clientX-resizing.sx)/cxS);
+    n.h=Math.max(110,resizing.sh+(e.clientY-resizing.sy)/cxS);
+    renderNode(n);renderLines();return;
+  }
+  if(!dragging)return;
+  const n=gn(dragging.id),r=cvWrap.getBoundingClientRect();
+  n.x=Math.max(0,(e.clientX-r.left)/cxS-cxX/cxS-dragging.ox);
+  n.y=Math.max(0,(e.clientY-r.top)/cxS-cxY/cxS-dragging.oy);
+  renderNode(n);renderLines();
+});
+document.addEventListener('mouseup',e=>{
+  if(resizing){resizing=null;updateProps();return;}
+  if(!dragging)return;
+  const n=gn(dragging.id);dragging=null;
+
+  // Both regular nodes AND containers can be adopted into a larger container.
+  // Containers can nest: VM→Subnet→VNet→RG
+  // A container can only be adopted by a LARGER container type (RG can hold VNet, VNet can hold Subnet)
+  const containerHierarchy = { resourcegroup: 0, vnet: 1, subnet: 2 };
+
+  const canBeAdopted = (childType, parentType) => {
+    if(!CTYPES.has(parentType)) return false;
+    if(!CTYPES.has(childType)) return true; // non-containers can go in any container
+    // containers can only go into a higher-level container (lower index = higher level)
+    return containerHierarchy[parentType] < containerHierarchy[childType];
+  };
+
+  const par = findContainer(n.x + (CTYPES.has(n.type)?n.w/2:50), n.y + (CTYPES.has(n.type)?n.h/2:45), n.id);
+
+  if(par && par.id !== n.parentId && canBeAdopted(n.type, par.type)){
+    adopt(par.id, n.id);
+    setMsg(`✓ ${n.props.name||n.id} is inside ${par.props.name||par.id}`);
+    updateProps(); updateSt();
+  } else if(!par && n.parentId){
+    // Dragged out of its container
+    const o=gn(n.parentId);
+    if(o) o.children=o.children.filter(c=>c!==n.id);
+    n.parentId=null;
+    updateProps(); updateSt();
+  }
+  renderLines();
+});
+cvWrap.addEventListener('click',e=>{if(e.target===cvWrap||e.target===canvas||e.target===svgl)deselectAll();});
+
+// ══════ SELECT ══════
+function selectNode(id){selId=id;reRender();updateProps();}
+function deselectAll(){selId=null;connFrom=null;reRender();emptyProps();}
+function deleteSelected(){if(selId)deleteNode(selId);}
+function deleteNode(id){
+  const n=gn(id);if(!n)return;
+  if(n.parentId){const p=gn(n.parentId);if(p)p.children=p.children.filter(c=>c!==id);}
+  n.children.forEach(cid=>{const c=gn(cid);if(c)c.parentId=null;});
+  nodes=nodes.filter(nd=>nd.id!==id);
+  connections=connections.filter(c=>c.from!==id&&c.to!==id);
+  document.getElementById('n'+id)?.remove();
+  if(selId===id){selId=null;emptyProps();}
+  renderLines();updateSt();
+}
+function clearAll(){
+  nodes=[];connections=[];counter={};selId=null;connFrom=null;
+  canvas.querySelectorAll('.node').forEach(el=>el.remove());
+  renderLines();emptyProps();updateSt();setMsg('Canvas cleared');
+}
+
+// ══════ TOOL ══════
+function setTool(t){
+  tool=t;connFrom=null;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t).classList.add('active');
+  canvas.querySelectorAll('.node').forEach(el=>t==='connect'?el.style.cursor='crosshair':el.style.cursor='');
+  setMsg(t==='connect'?'Connect: click source → destination':'Select mode');
+}
+function handleConn(id){
+  if(!connFrom){connFrom=id;document.getElementById('n'+id)?.classList.add('sel');setMsg(`Source: ${id} — click destination`);}
+  else{
+    if(connFrom!==id&&!connections.find(c=>(c.from===connFrom&&c.to===id)||(c.from===id&&c.to===connFrom))){
+      connections.push({from:connFrom,to:id});renderLines();updateSt();setMsg(`Connected ${connFrom} → ${id}`);
+    }
+    connFrom=null;canvas.querySelectorAll('.node').forEach(el=>el.classList.remove('sel'));
+    if(selId)document.getElementById('n'+selId)?.classList.add('sel');
+  }
+}
+
+// ══════ SVG CONNECTIONS ══════
+function renderLines(){
+  svgl.querySelectorAll('.att-line,.adot').forEach(el=>el.remove());
+  for(const c of connections){
+    const fn=gn(c.from),tn=gn(c.to);if(!fn||!tn)continue;
+    const fe=document.getElementById('n'+c.from),te=document.getElementById('n'+c.to);if(!fe||!te)continue;
+    const fw=CTYPES.has(fn.type)?fn.w:fe.offsetWidth;
+    const fh=CTYPES.has(fn.type)?fn.h:fe.offsetHeight;
+    const tw=CTYPES.has(tn.type)?tn.w:te.offsetWidth;
+    const th=CTYPES.has(tn.type)?tn.h:te.offsetHeight;
+    const fx=fn.x+fw/2,fy=fn.y+fh/2,tx=tn.x+tw/2,ty=tn.y+th/2;
+    const dx=(tx-fx)*.45;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M${fx},${fy} C${fx+dx},${fy} ${tx-dx},${ty} ${tx},${ty}`);
+    path.setAttribute('class','att-line');path.setAttribute('marker-end','url(#arr)');
+    svgl.appendChild(path);
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',fx);dot.setAttribute('cy',fy);dot.setAttribute('r','3');dot.setAttribute('class','adot');
+    svgl.appendChild(dot);
+  }
+}
+
+// ══════ HIERARCHY HELPERS ══════
+function getAncRG(id){const n=gn(id);if(!n)return null;if(n.type==='resourcegroup')return n;if(n.parentId)return getAncRG(n.parentId);return null;}
+function getAncVNet(id){const n=gn(id);if(!n)return null;if(n.type==='vnet')return n;if(n.parentId)return getAncVNet(n.parentId);return null;}
+function getAncSubnet(id){const n=gn(id);if(!n)return null;if(n.type==='subnet')return n;if(n.parentId){const p=gn(n.parentId);if(p&&p.type==='subnet')return p;return getAncSubnet(n.parentId);}return null;}
+function san(s){return(s||'res').replace(/[^a-zA-Z0-9_]/g,'_');}
+function getAllDesc(pid){const p=gn(pid);if(!p)return[];let all=[...p.children];p.children.forEach(c=>all=all.concat(getAllDesc(c)));return all.map(id=>gn(id)).filter(Boolean);}
+
+// ══════ PROPS PANEL ══════
+function updateProps(){
+  if(!selId){emptyProps();return;}
+  const n=gn(selId);if(!n){emptyProps();return;}
+  document.getElementById('pname').textContent=`${C[n.type].icon} ${C[n.type].label}`;
+  const par=n.parentId?gn(n.parentId):null;
+  document.getElementById('pparent').textContent=par?`Inside: ${C[par.type].icon} ${par.props.name||par.id}`:(CTYPES.has(n.type)&&n.children.length?`Contains ${n.children.length} resource(s)`:'');
+  const defs=DEF[n.type]||{},p=n.props;
+  let h=`<div class="psec">Identity</div>`;
+  h+=`<div class="pr"><div class="plbl">Name</div><input class="pinp" value="${p.name||''}" onchange="sp('${n.id}','name',this.value)"></div>`;
+
+  if(Object.keys(defs).length){h+=`<div class="psec">Configuration</div>`;
+    for(const[k,v]of Object.entries(defs)){
+      // Skip port fields — rendered separately below
+      if(k==='inboundPorts'||k==='outboundPorts') continue;
+      const lbl=k.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase());
+      const cur=p[k]!==undefined?p[k]:v;
+      if(k==='subnetType'){
+        h+=`<div class="pr"><div class="plbl">Subnet Type</div>
+          <div style="display:flex;gap:6px;margin-top:2px;">
+            <button onclick="setSubnetType('${n.id}','public')" style="flex:1;padding:5px;border-radius:3px;border:1px solid ${cur==='public'?'#f59e0b':'var(--border)'};background:${cur==='public'?'rgba(245,158,11,.12)':'var(--surface2)'};color:${cur==='public'?'#b45309':'var(--dim)'};font-family:JetBrains Mono,monospace;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.05em;">🌐 PUBLIC</button>
+            <button onclick="setSubnetType('${n.id}','private')" style="flex:1;padding:5px;border-radius:3px;border:1px solid ${cur==='private'?'#16a34a':'var(--border)'};background:${cur==='private'?'rgba(16,124,16,.1)':'var(--surface2)'};color:${cur==='private'?'#166534':'var(--dim)'};font-family:JetBrains Mono,monospace;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.05em;">🔒 PRIVATE</button>
+          </div>
+          <div style="font-family:JetBrains Mono,monospace;font-size:9px;color:var(--muted);margin-top:5px;line-height:1.5">
+            ${cur==='public'?'VMs placed here get a Public IP automatically':'VMs placed here are internal only'}
+          </div>
+        </div>`;
+      } else if(k==='softDelete'||k==='purgeProtection'){
+        h+=`<div class="pr"><div class="plbl">${lbl}</div><select class="psel" onchange="sp('${n.id}','${k}',this.value)"><option ${cur==='true'?'selected':''} value="true">true</option><option ${cur==='false'?'selected':''} value="false">false</option></select></div>`;
+      } else {
+        h+=`<div class="pr"><div class="plbl">${lbl}</div><input class="pinp" value="${cur}" onchange="sp('${n.id}','${k}',this.value)"></div>`;
+      }
+    }
+  }
+
+  // ── VM Port Editor ──
+  if(n.type==='vm'){
+    const inPorts  = (p.inboundPorts  || '22,80,443').split(',').map(s=>s.trim()).filter(Boolean);
+    const outPorts = (p.outboundPorts || '*').split(',').map(s=>s.trim()).filter(Boolean);
+
+    h += `<div class="psec">🔒 Firewall / NSG Rules</div>`;
+    h += `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:8px;line-height:1.5">
+      An NSG will be auto-generated and attached to this VM's NIC in the exported code.
+    </div>`;
+
+    // Inbound
+    h += `<div class="plbl">↓ Inbound Allow Ports</div>`;
+    h += `<div id="inbound-tags-${n.id}" style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px;">`;
+    inPorts.forEach(port=>{
+      const isPreset = ['22','80','443','3389','8080','8443'].includes(port);
+      h += `<span style="display:inline-flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(0,120,212,.1);border:1px solid rgba(0,120,212,.25);color:var(--azure)">
+        ${port}
+        <span onclick="removePort('${n.id}','inbound','${port}')" style="cursor:pointer;margin-left:2px;color:var(--red);font-size:10px;line-height:1">×</span>
+      </span>`;
+    });
+    h += `</div>`;
+    h += `<div style="display:flex;gap:5px;margin-bottom:10px;">
+      <input class="pinp" id="new-inport-${n.id}" placeholder="e.g. 3306 or *" style="flex:1" onkeydown="if(event.key==='Enter')addPort('${n.id}','inbound')">
+      <button onclick="addPort('${n.id}','inbound')" style="padding:5px 10px;border-radius:3px;border:1px solid var(--azure);background:rgba(0,120,212,.08);color:var(--azure);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>
+    </div>`;
+
+    // Quick preset inbound buttons
+    h += `<div class="plbl">Quick Add Inbound</div>`;
+    h += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 10px;">`;
+    [['SSH','22'],['HTTP','80'],['HTTPS','443'],['RDP','3389'],['MySQL','3306'],['MSSQL','1433'],['Postgres','5432'],['Redis','6379'],['Custom 8080','8080'],['All','*']].forEach(([label,port])=>{
+      const active = inPorts.includes(port);
+      h += `<button onclick="togglePort('${n.id}','inbound','${port}')"
+        style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:4px;
+        border:1px solid ${active?'var(--azure)':'var(--border)'};
+        background:${active?'rgba(0,120,212,.12)':'var(--surface2)'};
+        color:${active?'var(--azure)':'var(--dim)'};cursor:pointer;font-weight:${active?'700':'400'}">${label}</button>`;
+    });
+    h += `</div>`;
+
+    // Outbound
+    h += `<div class="plbl">↑ Outbound Allow Ports</div>`;
+    h += `<div id="outbound-tags-${n.id}" style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px;">`;
+    outPorts.forEach(port=>{
+      h += `<span style="display:inline-flex;align-items:center;gap:3px;font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(16,124,16,.08);border:1px solid rgba(16,124,16,.25);color:var(--green)">
+        ${port}
+        <span onclick="removePort('${n.id}','outbound','${port}')" style="cursor:pointer;margin-left:2px;color:var(--red);font-size:10px;line-height:1">×</span>
+      </span>`;
+    });
+    h += `</div>`;
+    h += `<div style="display:flex;gap:5px;margin-bottom:10px;">
+      <input class="pinp" id="new-outport-${n.id}" placeholder="e.g. 443 or *" style="flex:1" onkeydown="if(event.key==='Enter')addPort('${n.id}','outbound')">
+      <button onclick="addPort('${n.id}','outbound')" style="padding:5px 10px;border-radius:3px;border:1px solid var(--green);background:rgba(16,124,16,.06);color:var(--green);font-family:Rajdhani,sans-serif;font-size:11px;font-weight:700;cursor:pointer;">+ Add</button>
+    </div>`;
+
+    // Quick preset outbound
+    h += `<div class="plbl">Quick Add Outbound</div>`;
+    h += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 6px;">`;
+    [['All (default)','*'],['HTTPS','443'],['HTTP','80'],['DNS','53'],['SMTP','25']].forEach(([label,port])=>{
+      const active = outPorts.includes(port);
+      h += `<button onclick="togglePort('${n.id}','outbound','${port}')"
+        style="font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 7px;border-radius:4px;
+        border:1px solid ${active?'var(--green)':'var(--border)'};
+        background:${active?'rgba(16,124,16,.1)':'var(--surface2)'};
+        color:${active?'var(--green)':'var(--dim)'};cursor:pointer;font-weight:${active?'700':'400'}">${label}</button>`;
+    });
+    h += `</div>`;
+  }
+
+  if(CTYPES.has(n.type)){
+    h+=`<div class="psec">Size</div>`;
+    h+=`<div class="pr"><div class="plbl">Width (px)</div><input class="pinp" type="number" value="${n.w}" onchange="setSz('${n.id}','w',this.value)"></div>`;
+    h+=`<div class="pr"><div class="plbl">Height (px)</div><input class="pinp" type="number" value="${n.h}" onchange="setSz('${n.id}','h',this.value)"></div>`;
+    if(n.children.length){h+=`<div class="psec">Contains</div>`;n.children.forEach(cid=>{const c=gn(cid);if(c)h+=`<span class="ctag">${C[c.type]?.icon||'•'} ${c.props.name||cid}</span>`;});}
+  }
+  if(n.parentId){const par2=gn(n.parentId);if(par2){h+=`<div class="psec">Placement</div><div class="pr"><div class="plbl">Parent</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--azure);padding:4px 6px;background:rgba(0,120,212,.07);border-radius:3px;border:1px solid rgba(0,120,212,.18)">${C[par2.type].icon} ${par2.props.name||par2.id}</div></div>`;}}
+  document.getElementById('pbody').innerHTML=h;
+}
+function sp(id,k,v){const n=gn(id);if(n){n.props[k]=v;if(CTYPES.has(n.type))renderNode(n);}}
+function setSubnetType(id,type){
+  const n=gn(id); if(!n) return;
+  n.props.subnetType=type;
+  renderNode(n);
+  updateProps();
+  setMsg(`${n.props.name||id} set to ${type.toUpperCase()} subnet`);
+}
+function getPorts(n, dir){
+  const key = dir==='inbound'?'inboundPorts':'outboundPorts';
+  const def  = dir==='inbound'?'22,80,443':'*';
+  return (n.props[key]||def).split(',').map(s=>s.trim()).filter(Boolean);
+}
+function savePorts(n, dir, arr){
+  const key = dir==='inbound'?'inboundPorts':'outboundPorts';
+  n.props[key] = [...new Set(arr)].join(',');
+}
+function addPort(id, dir){
+  const n=gn(id); if(!n) return;
+  const inputEl = document.getElementById(`new-${dir==='inbound'?'in':'out'}port-${id}`);
+  const val = inputEl?.value?.trim();
+  if(!val) return;
+  const ports = getPorts(n, dir);
+  if(!ports.includes(val)) ports.push(val);
+  savePorts(n, dir, ports);
+  updateProps();
+  setMsg(`Port ${val} added to ${dir} rules of ${n.props.name||id}`);
+}
+function removePort(id, dir, port){
+  const n=gn(id); if(!n) return;
+  const ports = getPorts(n, dir).filter(p=>p!==port);
+  savePorts(n, dir, ports);
+  updateProps();
+}
+function togglePort(id, dir, port){
+  const n=gn(id); if(!n) return;
+  let ports = getPorts(n, dir);
+  if(ports.includes(port)) ports = ports.filter(p=>p!==port);
+  else ports.push(port);
+  savePorts(n, dir, ports);
+  updateProps();
+}
+function setSz(id,d,v){const n=gn(id);if(!n)return;n[d]=Math.max(d==='w'?160:110,parseInt(v)||200);renderNode(n);renderLines();}
+function emptyProps(){document.getElementById('pname').textContent='No Selection';document.getElementById('pparent').textContent='';document.getElementById('pbody').innerHTML=`<div class="pempty"><div class="phint">⚙</div>Click any resource to configure.<br><br>Drop resources <b>inside</b> containers — code will reflect hierarchy.</div>`;}
+
+// ══════ CODE GENERATION ══════
+function genBicep(){
+  if(!nodes.length)return`// No resources\n// Drag resources to start`;
+  const loc=nodes.find(n=>n.type==='resourcegroup')?.props?.location||'westeurope';
+  let b=`// Azure Bicep — Azure Architect v2\n// ${new Date().toISOString()}\ntargetScope = 'subscription'\n\nparam location string = '${loc}'\n\n`;
+  nodes.filter(n=>n.type==='resourcegroup').forEach(rg=>{
+    b+=`// 📦 Resource Group\nresource ${san(rg.props.name)} 'Microsoft.Resources/resourceGroups@2023-07-01' = {\n  name: '${rg.props.name}'\n  location: location\n}\n\n`;
+  });
+  nodes.filter(n=>n.type==='vnet').forEach(vn=>{
+    const rg=getAncRG(vn.id);
+    const subnets=vn.children.map(c=>gn(c)).filter(c=>c&&c.type==='subnet');
+    b+=`// 🌐 Virtual Network${rg?` [${rg.props.name}]`:''}\nresource ${san(vn.props.name)} 'Microsoft.Network/virtualNetworks@2023-05-01' = {\n  name: '${vn.props.name}'\n  location: location\n  properties: {\n    addressSpace: { addressPrefixes: ['${vn.props.addressSpace||'10.0.0.0/16'}'] }\n`;
+    if(subnets.length){b+=`    subnets: [\n`;subnets.forEach(sn=>{b+=`      { name: '${sn.props.name}' properties: { addressPrefix: '${sn.props.addressPrefix||'10.0.0.0/24'}' } }\n`;});b+=`    ]\n`;}
+    b+=`  }\n}\n\n`;
+  });
+  nodes.filter(n=>!CTYPES.has(n.type)).forEach(n=>{ b+=bicepRes(n); });
+  return b;
+}
+function bicepRes(n){
+  const p=n.props,nm=san(p.name||n.id);
+  const vn=getAncVNet(n.id),sn=getAncSubnet(n.id),rg=getAncRG(n.id);
+  const ctx=`${sn?` [subnet:${sn.props.name}]`:''}${vn?` [vnet:${vn.props.name}]`:''}${rg?` [rg:${rg.props.name}]`:''}`;
+  let b=`// ${C[n.type].icon} ${C[n.type].label}${ctx}\n`;
+  switch(n.type){
+    case 'vm':
+      b+=`resource ${nm} 'Microsoft.Compute/virtualMachines@2023-07-01' = {\n  name: '${p.name}'\n  location: location\n  properties: {\n    hardwareProfile: { vmSize: '${p.size||'Standard_B2s'}' }\n    osProfile: { adminUsername: '${p.adminUser||'azureuser'}' computerName: '${p.name}' }\n    storageProfile: { imageReference: { publisher:'Canonical' offer:'0001-com-ubuntu-server-jammy' sku:'22_04-lts' version:'latest' } }\n${sn?`    networkProfile: { networkInterfaces: [{ id: resourceId('Microsoft.Network/networkInterfaces','${nm}-nic') }] }\n`:''  }  }\n}\n\n`;break;
+    case 'aks':
+      b+=`resource ${nm} 'Microsoft.ContainerService/managedClusters@2023-08-01' = {\n  name: '${p.name}'\n  location: location\n  identity: { type: 'SystemAssigned' }\n  properties: {\n    kubernetesVersion: '${p.kubernetesVersion||'1.28'}'\n    dnsPrefix: '${nm}-dns'\n    agentPoolProfiles: [{ name:'system' count:${p.nodeCount||3} vmSize:'${p.nodeSize||'Standard_D2s_v3'}'${sn?` vnetSubnetID: ${san(sn.props.name)}.id`:''} }]\n  }\n}\n\n`;break;
+    case 'function':
+      b+=`resource ${nm} 'Microsoft.Web/sites@2023-01-01' = {\n  name: '${p.name}'\n  location: location\n  kind: 'functionapp,linux'\n  properties: {\n    siteConfig: { linuxFxVersion: '${p.runtime||'dotnet'}|${p.version||'8'}' }\n${sn?`    virtualNetworkSubnetId: ${san(sn.props.name)}.id\n`:''  }  }\n}\n\n`;break;
+    case 'aci':
+      b+=`resource ${nm} 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = {\n  name: '${p.name}'\n  location: location\n  properties: {\n    osType: '${p.osType||'Linux'}'\n    restartPolicy: 'Always'\n${sn?`    subnetIds: [{ id: ${san(sn.props.name)}.id }]\n`:''  }    containers: [{ name: '${p.name}' properties: { image: 'mcr.microsoft.com/azuredocs/aci-helloworld' resources: { requests: { cpu: ${p.cpu||1} memoryInGB: ${p.memoryGb||1.5} } } } }]\n  }\n}\n\n`;break;
+    case 'storage':
+      b+=`resource ${nm} 'Microsoft.Storage/storageAccounts@2023-01-01' = {\n  name: '${(p.name||n.id).toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24)}'\n  location: location\n  sku: { name: '${p.sku||'Standard_LRS'}' }\n  kind: '${p.kind||'StorageV2'}'\n  properties: { accessTier: '${p.accessTier||'Hot'}' }\n}\n\n`;break;
+    case 'nsg':
+      b+=`resource ${nm} 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {\n  name: '${p.name}'\n  location: location\n  properties: { securityRules: [{ name:'allow-inbound' properties:{ priority:100 direction:'Inbound' access:'Allow' protocol:'Tcp' sourceAddressPrefix:'*' sourcePortRange:'*' destinationAddressPrefix:'*' destinationPortRange:'${p.inboundPort||'80'}' } }] }\n}\n\n`;break;
+    case 'pip':
+      b+=`resource ${nm} 'Microsoft.Network/publicIPAddresses@2023-05-01' = {\n  name: '${p.name}'\n  location: location\n  sku: { name: '${p.sku||'Standard'}' }\n  properties: { publicIPAllocationMethod: '${p.allocationMethod||'Static'}' }\n}\n\n`;break;
+    case 'routetable':
+      b+=`resource ${nm} 'Microsoft.Network/routeTables@2023-05-01' = {\n  name: '${p.name}'\n  location: location\n  properties: { routes: [{ name:'default' properties:{ addressPrefix:'${p.destination||'0.0.0.0/0'}' nextHopType:'${p.nextHop||'Internet'}' } }] }\n  // Attach to subnet: ${sn?sn.props.name:'(connect to subnet)'}\n}\n\n`;break;
+    case 'natgw':
+      b+=`resource ${nm} 'Microsoft.Network/natGateways@2023-05-01' = {\n  name: '${p.name}'\n  location: location\n  sku: { name: 'Standard' }\n  properties: { idleTimeoutInMinutes: ${p.idleTimeoutMinutes||4} }\n  // Attach to subnet: ${sn?sn.props.name:'(connect to subnet)'}\n}\n\n`;break;
+    case 'keyvault':
+      b+=`resource ${nm} 'Microsoft.KeyVault/vaults@2023-02-01' = {\n  name: '${p.name}'\n  location: location\n  properties: { sku: { family:'A' name:'${p.sku||'standard'}' } tenantId: tenant().tenantId enableSoftDelete: ${p.softDelete!=='false'} }\n}\n\n`;break;
+    case 'loganalytics':
+      b+=`resource ${nm} 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {\n  name: '${p.name}'\n  location: location\n  properties: { sku: { name:'${p.sku||'PerGB2018'}' } retentionInDays: ${p.retentionDays||30} }\n}\n\n`;break;
+    case 'appinsights':
+      b+=`resource ${nm} 'Microsoft.Insights/components@2020-02-02' = {\n  name: '${p.name}'\n  location: location\n  kind: 'web'\n  properties: { Application_Type: '${p.applicationType||'web'}' }\n}\n\n`;break;
+    case 'cosmos':
+      b+=`resource ${nm} 'Microsoft.DocumentDB/databaseAccounts@2023-04-15' = {\n  name: '${p.name}'\n  location: location\n  kind: '${p.kind||'GlobalDocumentDB'}'\n  properties: { consistencyPolicy:{ defaultConsistencyLevel:'${p.consistency||'Session'}' } databaseAccountOfferType:'Standard' locations:[{ locationName:location failoverPriority:0 }] }\n}\n\n`;break;
+    case 'sqldb':
+      b+=`resource ${nm} 'Microsoft.Sql/servers@2023-02-01-preview' = {\n  name: '${p.name}'\n  location: location\n  properties: { administratorLogin:'${p.adminLogin||'sqladmin'}' administratorLoginPassword:'CHANGE_ME' }\n}\n\n`;break;
+    default:
+      b+=`resource ${nm} '${armTypeMap(n.type)}@2023-01-01' = {\n  name: '${p.name}'\n  location: location\n  properties: {}\n}\n\n`;
+  }
+  return b;
+}
+
+function genTF(){
+  if(!nodes.length)return`# No resources\n# Drag resources to start`;
+  const loc=nodes.find(n=>n.type==='resourcegroup')?.props?.location||'westeurope';
+
+  // ── Header: properly multi-line HCL ──
+  let tf = `# Terraform (azurerm) — Azure Architect v2\n`;
+  tf    += `# Generated: ${new Date().toISOString()}\n\n`;
+  tf    += `terraform {\n`;
+  tf    += `  required_providers {\n`;
+  tf    += `    azurerm = {\n`;
+  tf    += `      source  = "hashicorp/azurerm"\n`;
+  tf    += `      version = "~> 3.90"\n`;
+  tf    += `    }\n`;
+  tf    += `  }\n`;
+  tf    += `}\n\n`;
+  tf    += `provider "azurerm" {\n`;
+  tf    += `  features {}\n`;
+  tf    += `}\n\n`;
+  tf    += `variable "location" {\n`;
+  tf    += `  default = "${loc}"\n`;
+  tf    += `}\n\n`;
+
+  if(nodes.some(n=>n.type==='keyvault')){
+    tf = `data "azurerm_client_config" "current" {}\n\n` + tf;
+  }
+
+  // ── Resource Groups ──
+  nodes.filter(n=>n.type==='resourcegroup').forEach(rg=>{
+    tf += `# 📦 Resource Group\n`;
+    tf += `resource "azurerm_resource_group" "${san(rg.props.name)}" {\n`;
+    tf += `  name     = "${rg.props.name}"\n`;
+    tf += `  location = var.location\n`;
+    tf += `}\n\n`;
+  });
+
+  // rgRef: resolve to the actual declared RG resource reference.
+  // Fallback: if no parent RG on canvas, use the first declared RG, or a placeholder.
+  const allRGs = nodes.filter(n=>n.type==='resourcegroup');
+  const defaultRGRef = allRGs.length ? `azurerm_resource_group.${san(allRGs[0].props.name)}.name` : `"rg-placeholder"`;
+  const rgRef = id => {
+    const rg = getAncRG(id);
+    return rg ? `azurerm_resource_group.${san(rg.props.name)}.name` : defaultRGRef;
+  };
+
+  // ── VNets ──
+  nodes.filter(n=>n.type==='vnet').forEach(vn=>{
+    const rgName = getAncRG(vn.id)?.props?.name || allRGs[0]?.props?.name || 'default';
+    tf += `# 🌐 Virtual Network [rg: ${rgName}]\n`;
+    tf += `resource "azurerm_virtual_network" "${san(vn.props.name)}" {\n`;
+    tf += `  name                = "${vn.props.name}"\n`;
+    tf += `  resource_group_name = ${rgRef(vn.id)}\n`;
+    tf += `  location            = var.location\n`;
+    tf += `  address_space       = ["${vn.props.addressSpace||'10.0.0.0/16'}"]\n`;
+    tf += `}\n\n`;
+  });
+
+  // ── Subnets — emit ALL subnet nodes, linked to their parent VNet ──
+  // Works whether subnet is nested inside vnet on canvas or not.
+  nodes.filter(n=>n.type==='subnet').forEach((sn,idx)=>{
+    // Find parent VNet: check parentId chain first, then fall back to first VNet
+    const parentVNet = getAncVNet(sn.id) || nodes.find(n=>n.type==='vnet');
+    const vnetRef = parentVNet
+      ? `azurerm_virtual_network.${san(parentVNet.props.name)}.name`
+      : `"REPLACE_WITH_VNET_NAME"`;
+    const snRgRef = parentVNet ? rgRef(parentVNet.id) : defaultRGRef;
+
+    // Assign non-overlapping address prefixes if using default
+    const defaultPrefixes = ['10.0.1.0/24','10.0.2.0/24','10.0.3.0/24','10.0.4.0/24'];
+    const prefix = sn.props.addressPrefix && sn.props.addressPrefix !== '10.0.1.0/24'
+      ? sn.props.addressPrefix
+      : (defaultPrefixes[idx] || `10.0.${idx+1}.0/24`);
+
+    tf += `# ⬡ Subnet${parentVNet?` [vnet: ${parentVNet.props.name}]`:''}\n`;
+    tf += `resource "azurerm_subnet" "${san(sn.props.name)}" {\n`;
+    tf += `  name                 = "${sn.props.name}"\n`;
+    tf += `  resource_group_name  = ${snRgRef}\n`;
+    tf += `  virtual_network_name = ${vnetRef}\n`;
+    tf += `  address_prefixes     = ["${prefix}"]\n`;
+    tf += `\n`;
+    if(parentVNet){
+      tf += `  depends_on = [azurerm_virtual_network.${san(parentVNet.props.name)}]\n`;
+    }
+    tf += `}\n\n`;
+  });
+
+  // ── Network Interfaces for every VM ──
+  // Build a map of subnet name → subnet node for reliable lookup
+  const subnetsByName = {};
+  nodes.filter(n=>n.type==='subnet').forEach(sn=>{ subnetsByName[sn.props.name] = sn; });
+  const allSubnets = nodes.filter(n=>n.type==='subnet');
+
+  nodes.filter(n=>n.type==='vm').forEach((n,vmIdx)=>{
+    const nm = san(n.props.name||n.id);
+    const ancSn  = getAncSubnet(n.id);
+    const bestSn = ancSn || allSubnets[vmIdx % allSubnets.length] || null;
+    const subnetIdExpr = bestSn
+      ? `azurerm_subnet.${san(bestSn.props.name)}.id`
+      : `"REPLACE_WITH_SUBNET_ID"`;
+    const isPublic = bestSn && bestSn.props.subnetType === 'public';
+
+    // ── Collect port rules ──
+    const inPorts  = (n.props.inboundPorts  || '22,80,443').split(',').map(s=>s.trim()).filter(Boolean);
+    const outPorts = (n.props.outboundPorts || '*').split(',').map(s=>s.trim()).filter(Boolean);
+
+    // ── NSG for this VM — one security_rule per port (Azure does not accept comma-separated ports) ──
+    tf += `# 🔒 NSG for ${n.props.name||n.id} (inbound: ${inPorts.join(', ')} | outbound: ${outPorts.join(', ')})\n`;
+    tf += `resource "azurerm_network_security_group" "${nm}_nsg" {\n`;
+    tf += `  name                = "${n.props.name||n.id}-nsg"\n`;
+    tf += `  location            = var.location\n`;
+    tf += `  resource_group_name = ${rgRef(n.id)}\n`;
+    tf += `\n`;
+    inPorts.forEach((port, i) => {
+      // Azure accepts "*" directly; ranges use "-" delimiter e.g. "8080-8090"
+      const portVal = port === '*' ? '*' : port;
+      tf += `  security_rule {\n`;
+      tf += `    name                       = "inbound-allow-${port === '*' ? 'all' : port}"\n`;
+      tf += `    priority                   = ${100 + i * 10}\n`;
+      tf += `    direction                  = "Inbound"\n`;
+      tf += `    access                     = "Allow"\n`;
+      tf += `    protocol                   = "${port === '53' ? 'Udp' : 'Tcp'}"\n`;
+      tf += `    source_port_range          = "*"\n`;
+      tf += `    destination_port_range     = "${portVal}"\n`;
+      tf += `    source_address_prefix      = "*"\n`;
+      tf += `    destination_address_prefix = "*"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+    });
+    outPorts.forEach((port, i) => {
+      const portVal = port === '*' ? '*' : port;
+      tf += `  security_rule {\n`;
+      tf += `    name                       = "outbound-allow-${port === '*' ? 'all' : port}"\n`;
+      tf += `    priority                   = ${200 + i * 10}\n`;
+      tf += `    direction                  = "Outbound"\n`;
+      tf += `    access                     = "Allow"\n`;
+      tf += `    protocol                   = "${port === '53' ? 'Udp' : 'Tcp'}"\n`;
+      tf += `    source_port_range          = "*"\n`;
+      tf += `    destination_port_range     = "${portVal}"\n`;
+      tf += `    source_address_prefix      = "*"\n`;
+      tf += `    destination_address_prefix = "*"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+    });
+    tf += `  depends_on = [azurerm_resource_group.${san(allRGs[0]?.props?.name||'rg')}]\n`;
+    tf += `\n`;
+    tf += `  tags = {\n`;
+    tf += `    managed_by = "azure-architect"\n`;
+    tf += `  }\n`;
+    tf += `}\n\n`;
+
+    // ── Public IP (if public subnet) ──
+    if(isPublic){
+      tf += `# 🌐 Public IP for ${n.props.name||n.id} (public subnet)\n`;
+      tf += `resource "azurerm_public_ip" "${nm}_pip" {\n`;
+      tf += `  name                = "${n.props.name||n.id}-pip"\n`;
+      tf += `  location            = var.location\n`;
+      tf += `  resource_group_name = ${rgRef(n.id)}\n`;
+      tf += `  allocation_method   = "Static"\n`;
+      tf += `  sku                 = "Standard"\n`;
+      tf += `\n`;
+      tf += `  depends_on = [azurerm_resource_group.${san(allRGs[0]?.props?.name||'rg')}]\n`;
+      tf += `\n`;
+      tf += `  tags = {\n`;
+      tf += `    managed_by = "azure-architect"\n`;
+      tf += `  }\n`;
+      tf += `}\n\n`;
+    }
+
+    // ── NIC ──
+    tf += `# 🔌 Network Interface for ${n.props.name||n.id}${isPublic?' [PUBLIC]':' [PRIVATE]'}\n`;
+    tf += `resource "azurerm_network_interface" "${nm}_nic" {\n`;
+    tf += `  name                = "${n.props.name||n.id}-nic"\n`;
+    tf += `  location            = var.location\n`;
+    tf += `  resource_group_name = ${rgRef(n.id)}\n`;
+    tf += `\n`;
+    tf += `  ip_configuration {\n`;
+    tf += `    name                          = "internal"\n`;
+    tf += `    subnet_id                     = ${subnetIdExpr}\n`;
+    tf += `    private_ip_address_allocation = "Dynamic"\n`;
+    if(isPublic) tf += `    public_ip_address_id          = azurerm_public_ip.${nm}_pip.id\n`;
+    tf += `  }\n`;
+    tf += `\n`;
+    const nicDeps = [`azurerm_subnet.${san(bestSn?.props?.name||'subnet')}`];
+    if(isPublic) nicDeps.unshift(`azurerm_public_ip.${nm}_pip`);
+    tf += `  depends_on = [${nicDeps.join(', ')}]\n`;
+    tf += `}\n\n`;
+
+    // ── NSG ↔ NIC association ──
+    tf += `resource "azurerm_network_interface_security_group_association" "${nm}_nsg_assoc" {\n`;
+    tf += `  network_interface_id      = azurerm_network_interface.${nm}_nic.id\n`;
+    tf += `  network_security_group_id = azurerm_network_security_group.${nm}_nsg.id\n`;
+    tf += `\n`;
+    tf += `  depends_on = [azurerm_network_interface.${nm}_nic, azurerm_network_security_group.${nm}_nsg]\n`;
+    tf += `}\n\n`;
+  });
+
+  // ── All other resources ──
+  nodes.filter(n=>!CTYPES.has(n.type)).forEach(n=>{ tf += tfRes(n, rgRef); });
+
+  // ── Sensitive variables ──
+  if(nodes.some(n=>n.type==='sqldb')){
+    tf += `variable "sql_password" {\n  sensitive   = true\n  type        = string\n  description = "SQL Server administrator password"\n}\n\n`;
+  }
+  if(nodes.some(n=>n.type==='postgre')){
+    tf += `variable "pg_password" {\n  sensitive   = true\n  type        = string\n  description = "PostgreSQL administrator password"\n}\n\n`;
+  }
+  return tf;
+}
+
+function tfRes(n, rgRef){
+  const p   = n.props;
+  const nm  = san(p.name||n.id);
+  const tt  = TFTYPE[n.type] || 'azurerm_resource';
+  const vn  = getAncVNet(n.id);
+  const sn  = getAncSubnet(n.id);
+  const rg  = getAncRG(n.id);
+  const ctx = `${sn?` [subnet: ${sn.props.name}]`:''}${vn?` [vnet: ${vn.props.name}]`:''}${rg?` [rg: ${rg.props.name}]`:''}`;
+
+  let tf = `# ${C[n.type].icon} ${C[n.type].label}${ctx}\n`;
+  tf    += `resource "${tt}" "${nm}" {\n`;
+  tf    += `  resource_group_name = ${rgRef(n.id)}\n`;
+  tf    += `  location            = var.location\n`;
+
+  switch(n.type){
+
+    case 'vm':
+      tf += `  name           = "${p.name}"\n`;
+      tf += `  size           = "${p.size||'Standard_B2s'}"\n`;
+      tf += `  admin_username = "${p.adminUser||'azureuser'}"\n`;
+      tf += `\n`;
+      tf += `  network_interface_ids = [\n`;
+      tf += `    azurerm_network_interface.${nm}_nic.id,\n`;
+      tf += `  ]\n`;
+      tf += `\n`;
+      tf += `  os_disk {\n`;
+      tf += `    caching              = "ReadWrite"\n`;
+      tf += `    storage_account_type = "Standard_LRS"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  source_image_reference {\n`;
+      tf += `    publisher = "Canonical"\n`;
+      tf += `    offer     = "0001-com-ubuntu-server-jammy"\n`;
+      tf += `    sku       = "22_04-lts"\n`;
+      tf += `    version   = "latest"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  admin_ssh_key {\n`;
+      tf += `    username   = "${p.adminUser||'azureuser'}"\n`;
+      tf += `    public_key = file("./crud-key.pub")\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  depends_on = [azurerm_network_interface.${nm}_nic]\n`;
+      break;
+
+    case 'vmss':
+      tf += `  name     = "${p.name}"\n`;
+      tf += `  sku      = "${p.sku||'Standard_B2s'}"\n`;
+      tf += `  instances = ${p.capacity||2}\n`;
+      tf += `  admin_username = "${p.adminUser||'azureuser'}"\n`;
+      tf += `\n`;
+      tf += `  source_image_reference {\n`;
+      tf += `    publisher = "Canonical"\n`;
+      tf += `    offer     = "0001-com-ubuntu-server-jammy"\n`;
+      tf += `    sku       = "22_04-lts"\n`;
+      tf += `    version   = "latest"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  os_disk {\n`;
+      tf += `    caching              = "ReadWrite"\n`;
+      tf += `    storage_account_type = "Standard_LRS"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  network_interface {\n`;
+      tf += `    name    = "primary"\n`;
+      tf += `    primary = true\n`;
+      tf += `    ip_configuration {\n`;
+      tf += `      name      = "internal"\n`;
+      tf += `      primary   = true\n`;
+      if(sn) tf += `      subnet_id = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `    }\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'aks':
+      tf += `  name               = "${p.name}"\n`;
+      tf += `  kubernetes_version = "${p.kubernetesVersion||'1.28'}"\n`;
+      tf += `  dns_prefix         = "${nm}-dns"\n`;
+      tf += `\n`;
+      tf += `  default_node_pool {\n`;
+      tf += `    name       = "system"\n`;
+      tf += `    node_count = ${p.nodeCount||3}\n`;
+      tf += `    vm_size    = "${p.nodeSize||'Standard_D2s_v3'}"\n`;
+      if(sn) tf += `    vnet_subnet_id = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  identity {\n`;
+      tf += `    type = "SystemAssigned"\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'function':
+      tf += `  name                       = "${p.name}"\n`;
+      tf += `  service_plan_id            = azurerm_service_plan.${nm}_plan.id\n`;
+      tf += `  storage_account_name       = "REPLACE_STORAGE_ACCOUNT_NAME"\n`;
+      tf += `  storage_account_access_key = "REPLACE_STORAGE_ACCOUNT_KEY"\n`;
+      if(sn) tf += `  virtual_network_subnet_id  = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `\n`;
+      tf += `  site_config {\n`;
+      tf += `    application_stack {\n`;
+      tf += `      node_version = "20"\n`;
+      tf += `    }\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'appservice':
+      tf += `  name            = "${p.name}"\n`;
+      tf += `  service_plan_id = azurerm_service_plan.${nm}_plan.id\n`;
+      if(sn) tf += `  virtual_network_subnet_id = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `\n`;
+      tf += `  site_config {\n`;
+      tf += `    application_stack {\n`;
+      tf += `      node_version = "20-lts"\n`;
+      tf += `    }\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'aci':
+      tf += `  name           = "${p.name}"\n`;
+      tf += `  os_type        = "${p.osType||'Linux'}"\n`;
+      tf += `  restart_policy = "Always"\n`;
+      if(sn){
+        tf += `\n`;
+        tf += `  subnet_ids = [\n`;
+        tf += `    azurerm_subnet.${san(sn.props.name)}.id,\n`;
+        tf += `  ]\n`;
+      }
+      tf += `\n`;
+      tf += `  container {\n`;
+      tf += `    name   = "${p.name}"\n`;
+      tf += `    image  = "mcr.microsoft.com/azuredocs/aci-helloworld"\n`;
+      tf += `    cpu    = ${p.cpu||1}\n`;
+      tf += `    memory = ${p.memoryGb||1.5}\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'storage':
+      const storageName = (p.name||n.id).toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,24);
+      tf += `  name                     = "${storageName}"\n`;
+      tf += `  account_tier             = "Standard"\n`;
+      tf += `  account_replication_type = "LRS"\n`;
+      tf += `  account_kind             = "${p.kind||'StorageV2'}"\n`;
+      tf += `  access_tier              = "${p.accessTier||'Hot'}"\n`;
+      break;
+
+    case 'nsg':
+      tf += `  name = "${p.name}"\n`;
+      tf += `\n`;
+      // Split comma-separated ports and emit one rule each
+      (p.inboundPort||'80').split(',').map(s=>s.trim()).filter(Boolean).forEach((port, i) => {
+        tf += `  security_rule {\n`;
+        tf += `    name                       = "inbound-allow-${port === '*' ? 'all' : port}"\n`;
+        tf += `    priority                   = ${100 + i * 10}\n`;
+        tf += `    direction                  = "Inbound"\n`;
+        tf += `    access                     = "Allow"\n`;
+        tf += `    protocol                   = "Tcp"\n`;
+        tf += `    source_port_range          = "*"\n`;
+        tf += `    destination_port_range     = "${port === '*' ? '*' : port}"\n`;
+        tf += `    source_address_prefix      = "*"\n`;
+        tf += `    destination_address_prefix = "*"\n`;
+        tf += `  }\n`;
+        tf += `\n`;
+      });
+      break;
+
+    case 'pip':
+      tf += `  name              = "${p.name}"\n`;
+      tf += `  sku               = "${p.sku||'Standard'}"\n`;
+      tf += `  allocation_method = "${p.allocationMethod||'Static'}"\n`;
+      break;
+
+    case 'natgw':
+      tf += `  name                    = "${p.name}"\n`;
+      tf += `  sku_name                = "Standard"\n`;
+      tf += `  idle_timeout_in_minutes = ${p.idleTimeoutMinutes||4}\n`;
+      if(sn){
+        tf += `}\n\n`;
+        tf += `resource "azurerm_subnet_nat_gateway_association" "${nm}_assoc" {\n`;
+        tf += `  subnet_id      = azurerm_subnet.${san(sn.props.name)}.id\n`;
+        tf += `  nat_gateway_id = azurerm_nat_gateway.${nm}.id\n`;
+      }
+      break;
+
+    case 'routetable':
+      tf += `  name                          = "${p.name}"\n`;
+      tf += `  disable_bgp_route_propagation = false\n`;
+      tf += `\n`;
+      tf += `  route {\n`;
+      tf += `    name           = "default-route"\n`;
+      tf += `    address_prefix = "${p.destination||'0.0.0.0/0'}"\n`;
+      tf += `    next_hop_type  = "${p.nextHop||'Internet'}"\n`;
+      tf += `  }\n`;
+      if(sn){
+        tf += `}\n\n`;
+        tf += `resource "azurerm_subnet_route_table_association" "${nm}_assoc" {\n`;
+        tf += `  subnet_id      = azurerm_subnet.${san(sn.props.name)}.id\n`;
+        tf += `  route_table_id = azurerm_route_table.${nm}.id\n`;
+      }
+      break;
+
+    case 'vpngw':
+      tf += `  name     = "${p.name}"\n`;
+      tf += `  type     = "Vpn"\n`;
+      tf += `  vpn_type = "${p.vpnType||'RouteBased'}"\n`;
+      tf += `  sku      = "${p.sku||'VpnGw1'}"\n`;
+      tf += `\n`;
+      tf += `  ip_configuration {\n`;
+      tf += `    name                          = "vnetGatewayConfig"\n`;
+      tf += `    public_ip_address_id          = azurerm_public_ip.${nm}_pip.id\n`;
+      if(sn) tf += `    subnet_id                     = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `    private_ip_address_allocation = "Dynamic"\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'privatedns':
+      tf += `  name = "${p.zoneName||p.name}"\n`;
+      break;
+
+    case 'keyvault':
+      tf += `  name                       = "${p.name}"\n`;
+      tf += `  sku_name                   = "${p.sku||'standard'}"\n`;
+      tf += `  tenant_id                  = data.azurerm_client_config.current.tenant_id\n`;
+      tf += `  soft_delete_retention_days = 7\n`;
+      tf += `  purge_protection_enabled   = ${p.purgeProtection==='true'}\n`;
+      break;
+
+    case 'sqldb':
+      tf += `  name                         = "${p.name}"\n`;
+      tf += `  version                      = "12.0"\n`;
+      tf += `  administrator_login          = "${p.adminLogin||'sqladmin'}"\n`;
+      tf += `  administrator_login_password = var.sql_password\n`;
+      break;
+
+    case 'cosmos':
+      tf += `  name       = "${p.name}"\n`;
+      tf += `  kind       = "${p.kind||'GlobalDocumentDB'}"\n`;
+      tf += `  offer_type = "Standard"\n`;
+      tf += `\n`;
+      tf += `  consistency_policy {\n`;
+      tf += `    consistency_level = "${p.consistency||'Session'}"\n`;
+      tf += `  }\n`;
+      tf += `\n`;
+      tf += `  geo_location {\n`;
+      tf += `    location          = var.location\n`;
+      tf += `    failover_priority = 0\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'redis':
+      tf += `  name     = "${p.name}"\n`;
+      tf += `  sku_name = "${p.sku||'Basic'}"\n`;
+      tf += `  family   = "C"\n`;
+      tf += `  capacity = ${p.capacity||1}\n`;
+      break;
+
+    case 'postgre':
+      tf += `  name                   = "${p.name}"\n`;
+      tf += `  server_version         = "${p.version||'15'}"\n`;
+      tf += `  administrator_login    = "psqladmin"\n`;
+      tf += `  administrator_password = var.pg_password\n`;
+      tf += `  storage_mb             = ${(parseInt(p.storageSizeGb)||32)*1024}\n`;
+      tf += `  sku_name               = "${p.sku||'Standard_D2s_v3'}"\n`;
+      if(sn){
+        tf += `\n`;
+        tf += `  delegated_subnet_id = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      }
+      break;
+
+    case 'loganalytics':
+      tf += `  name              = "${p.name}"\n`;
+      tf += `  sku               = "${p.sku||'PerGB2018'}"\n`;
+      tf += `  retention_in_days = ${p.retentionDays||30}\n`;
+      break;
+
+    case 'appinsights':
+      tf += `  name             = "${p.name}"\n`;
+      tf += `  application_type = "${p.applicationType||'web'}"\n`;
+      break;
+
+    case 'alb':
+      tf += `  name = "${p.name}"\n`;
+      tf += `  sku  = "${p.sku||'Standard'}"\n`;
+      tf += `\n`;
+      tf += `  frontend_ip_configuration {\n`;
+      tf += `    name                 = "frontend"\n`;
+      if(sn) tf += `    subnet_id            = azurerm_subnet.${san(sn.props.name)}.id\n`;
+      tf += `  }\n`;
+      break;
+
+    case 'servicebus':
+      tf += `  name = "${p.name}"\n`;
+      tf += `  sku  = "${p.sku||'Standard'}"\n`;
+      break;
+
+    case 'eventhub':
+      tf += `  name     = "${p.name}"\n`;
+      tf += `  sku      = "${p.sku||'Standard'}"\n`;
+      tf += `  capacity = 1\n`;
+      break;
+
+    case 'eventgrid':
+      tf += `  name          = "${p.name}"\n`;
+      tf += `  input_schema  = "${p.inputSchema||'EventGridSchema'}"\n`;
+      break;
+
+    case 'managedid':
+      tf += `  name = "${p.name}"\n`;
+      break;
+
+    case 'frontdoor':
+      tf += `  name     = "${p.name}"\n`;
+      tf += `  sku_name = "${p.sku||'Standard_AzureFrontDoor'}"\n`;
+      break;
+
+    default:
+      tf += `  name = "${p.name}"\n`;
+  }
+
+  tf += `\n`;
+  tf += `  tags = {\n`;
+  tf += `    managed_by = "azure-architect"\n`;
+  tf += `  }\n`;
+  tf += `}\n\n`;
+  return tf;
+}
+
+function genARM(){
+  if(!nodes.length)return JSON.stringify({"comment":"No resources — drag resources to start"},null,2);
+  const resources=[];
+  nodes.filter(n=>n.type==='resourcegroup').forEach(rg=>{
+    resources.push({type:'Microsoft.Resources/resourceGroups',apiVersion:'2023-07-01',name:rg.props.name,location:"[parameters('location')]",properties:{}});
+  });
+  nodes.filter(n=>n.type==='vnet').forEach(vn=>{
+    const subnets=vn.children.map(c=>gn(c)).filter(c=>c&&c.type==='subnet');
+    resources.push({type:'Microsoft.Network/virtualNetworks',apiVersion:'2023-05-01',name:vn.props.name,location:"[parameters('location')]",
+      comments:`VNet in RG: ${getAncRG(vn.id)?.props?.name||'none'}`,
+      properties:{addressSpace:{addressPrefixes:[vn.props.addressSpace||'10.0.0.0/16']},
+        subnets:subnets.map(sn=>({name:sn.props.name,properties:{addressPrefix:sn.props.addressPrefix||'10.0.0.0/24'}}))}});
+  });
+  nodes.filter(n=>!CTYPES.has(n.type)).forEach(n=>{
+    const vn=getAncVNet(n.id),sn=getAncSubnet(n.id),rg=getAncRG(n.id),p=n.props;
+    const res={type:armTypeMap(n.type),apiVersion:'2023-01-01',name:p.name||n.id,location:"[parameters('location')]",
+      comments:`${C[n.type].icon} ${C[n.type].label}${sn?` in subnet:${sn.props.name}`:''}${vn?` in vnet:${vn.props.name}`:''}${rg?` in rg:${rg.props.name}`:''}`,
+      properties:{}};
+    switch(n.type){
+      case 'vm':res.properties={hardwareProfile:{vmSize:p.size||'Standard_B2s'},osProfile:{adminUsername:p.adminUser||'azureuser'},storageProfile:{imageReference:{publisher:'Canonical',offer:'0001-com-ubuntu-server-jammy',sku:'22_04-lts',version:'latest'}}};if(sn)res.properties.networkProfile={networkInterfaces:[{id:`[resourceId('Microsoft.Network/networkInterfaces','${p.name}-nic')]`}]};break;
+      case 'aks':res.apiVersion='2023-08-01';res.identity={type:'SystemAssigned'};res.properties={kubernetesVersion:p.kubernetesVersion||'1.28',dnsPrefix:`${san(p.name)}-dns`,agentPoolProfiles:[{name:'system',count:parseInt(p.nodeCount)||3,vmSize:p.nodeSize||'Standard_D2s_v3',...(sn?{vnetSubnetID:`[resourceId('Microsoft.Network/virtualNetworks/subnets','${vn?.props?.name||'vnet'}','${sn.props.name}')]`}:{})}]};break;
+      case 'nsg':res.apiVersion='2023-05-01';res.properties={securityRules:[{name:'allow-inbound',properties:{priority:100,direction:'Inbound',access:'Allow',protocol:'Tcp',sourcePortRange:'*',destinationPortRange:p.inboundPort||'80',sourceAddressPrefix:'*',destinationAddressPrefix:'*'}}]};break;
+      case 'pip':res.apiVersion='2023-05-01';res.sku={name:p.sku||'Standard'};res.properties={publicIPAllocationMethod:p.allocationMethod||'Static'};break;
+      case 'routetable':res.apiVersion='2023-05-01';res.properties={routes:[{name:'default',properties:{addressPrefix:p.destination||'0.0.0.0/0',nextHopType:p.nextHop||'Internet'}}]};break;
+      case 'natgw':res.apiVersion='2023-05-01';res.sku={name:'Standard'};res.properties={idleTimeoutInMinutes:parseInt(p.idleTimeoutMinutes)||4};break;
+      case 'storage':res.apiVersion='2023-01-01';res.sku={name:p.sku||'Standard_LRS'};res.kind=p.kind||'StorageV2';res.properties={accessTier:p.accessTier||'Hot'};break;
+      case 'keyvault':res.apiVersion='2023-02-01';res.properties={sku:{family:'A',name:p.sku||'standard'},tenantId:"[subscription().tenantId]",enableSoftDelete:p.softDelete!=='false'};break;
+      case 'cosmos':res.apiVersion='2023-04-15';res.kind=p.kind||'GlobalDocumentDB';res.properties={databaseAccountOfferType:'Standard',consistencyPolicy:{defaultConsistencyLevel:p.consistency||'Session'},locations:[{locationName:"[parameters('location')]",failoverPriority:0}]};break;
+      case 'function':res.apiVersion='2023-01-01';res.kind='functionapp,linux';res.properties={siteConfig:{linuxFxVersion:`${p.runtime||'dotnet'}|${p.version||'8'}`},...(sn?{virtualNetworkSubnetId:`[resourceId('Microsoft.Network/virtualNetworks/subnets','${vn?.props?.name||'vnet'}','${sn.props.name}')]`}:{})};break;
+    }
+    resources.push(res);
+  });
+  return JSON.stringify({'$schema':'https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#',contentVersion:'1.0.0.0',parameters:{location:{type:'string',defaultValue:'[resourceGroup().location]'}},resources},null,2);
+}
+
+function armTypeMap(t){
+  const m={vm:'Microsoft.Compute/virtualMachines',vmss:'Microsoft.Compute/virtualMachineScaleSets',function:'Microsoft.Web/sites',aks:'Microsoft.ContainerService/managedClusters',aci:'Microsoft.ContainerInstance/containerGroups',appservice:'Microsoft.Web/sites',storage:'Microsoft.Storage/storageAccounts',sqldb:'Microsoft.Sql/servers',cosmos:'Microsoft.DocumentDB/databaseAccounts',redis:'Microsoft.Cache/Redis',postgre:'Microsoft.DBforPostgreSQL/flexibleServers',nsg:'Microsoft.Network/networkSecurityGroups',pip:'Microsoft.Network/publicIPAddresses',natgw:'Microsoft.Network/natGateways',routetable:'Microsoft.Network/routeTables',vpngw:'Microsoft.Network/virtualNetworkGateways',alb:'Microsoft.Network/loadBalancers',agw:'Microsoft.Network/applicationGateways',frontdoor:'Microsoft.Cdn/profiles',servicebus:'Microsoft.ServiceBus/namespaces',eventhub:'Microsoft.EventHub/namespaces',eventgrid:'Microsoft.EventGrid/topics',keyvault:'Microsoft.KeyVault/vaults',managedid:'Microsoft.ManagedIdentity/userAssignedIdentities',loganalytics:'Microsoft.OperationalInsights/workspaces',appinsights:'Microsoft.Insights/components',privatedns:'Microsoft.Network/privateDnsZones'};
+  return m[t]||`Microsoft.Unknown/${t}`;
+}
+
+// ══════ EXPORT ══════
+function exportCode(lang){
+  const m={bicep:['main.bicep',genBicep(),'text/plain'],arm:['azuredeploy.json',genARM(),'application/json'],terraform:['main.tf',genTF(),'text/plain']};
+  const[fn,content,mime]=m[lang];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=fn;a.click();
+  setMsg(`Exported ${fn}`);
+}
+
+// ══════ MODAL ══════
+function switchTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.tabbtn[onclick="switchTab('${tab}')"]`).classList.add('active');
+  const code=tab==='bicep'?genBicep():tab==='arm'?genARM():genTF();
+  document.getElementById('cprev').innerHTML=hl(code,tab);
+}
+function openDeploy(){
+  if(!nodes.length){setMsg('⚠ Add resources first');return;}
+  activeTab='bicep';
+  document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`.tabbtn[onclick="switchTab('bicep')"]`).classList.add('active');
+  document.getElementById('cprev').innerHTML=hl(genBicep(),'bicep');
+  document.getElementById('dsteps').style.display='none';
+  document.getElementById('ddeploy').style.display='inline-block';
+  document.getElementById('dcncl').textContent='Cancel';
+  for(let i=0;i<5;i++){const el=document.getElementById('ds'+i);if(el){el.className='ds pending';el.querySelector('span').textContent=['📋','📦','🔍','⚡','✅'][i];}}
+  document.getElementById('mmodal').classList.add('open');
+}
+function closeDeploy(){document.getElementById('mmodal').classList.remove('open');}
+function runDeploy(){
+  if(deploying)return;deploying=true;
+  document.getElementById('dsteps').style.display='flex';
+  document.getElementById('ddeploy').style.display='none';
+  document.getElementById('dcncl').textContent='Close';
+  const durs=[900,1300,2000,2800,0];let delay=200;
+  for(let i=0;i<5;i++){
+    setTimeout((idx=>{return()=>{
+      if(idx>0){const p=document.getElementById('ds'+(idx-1));p.className='ds done';p.querySelector('span').textContent='✅';}
+      const el=document.getElementById('ds'+idx);el.className='ds active';
+      if(idx<4)el.querySelector('span').innerHTML='<span class="spin">⟳</span>';
+      if(idx===4){el.className='ds done';el.querySelector('span').textContent='✅';setMsg(`✅ Deployed ${nodes.length} resources`);deploying=false;}
+    };})(i),delay);
+    delay+=durs[i];
+  }
+}
+
+// ══════ SYNTAX ══════
+function hl(code,lang){
+  const e=code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if(lang==='bicep')return e
+    .replace(/\b(targetScope|resource|param|var|output|module|existing|for|if|import|scope)\b/g,'<span class="kw">$1</span>')
+    .replace(/'([^']+)'/g,'<span class="str">\'$1\'</span>')
+    .replace(/(\/\/.*)/g,'<span class="cm">$1</span>')
+    .replace(/(@\w+)/g,'<span class="tp">$1</span>');
+  if(lang==='terraform')return e
+    .replace(/\b(terraform|provider|resource|variable|output|data|locals|module|required_providers|features)\b/g,'<span class="kw">$1</span>')
+    .replace(/"([^"]+)"/g,'<span class="str">"$1"</span>')
+    .replace(/(#.*)/g,'<span class="cm">$1</span>')
+    .replace(/\b(true|false|null)\b/g,'<span class="tp">$1</span>');
+  return e
+    .replace(/"(type|apiVersion|name|location|properties|parameters|resources|sku|kind|comments)":/g,'"<span class="kw">$1</span>":')
+    .replace(/:\s*"([^"]+)"/g,': "<span class="str">$1</span>"')
+    .replace(/(\/\/.*)/g,'<span class="cm">$1</span>');
+}
+
+// ══════ ZOOM ══════
+function doZoom(f){cxS=Math.max(.25,Math.min(2.5,cxS*f));canvas.style.transform=`translate(${cxX}px,${cxY}px) scale(${cxS})`;}
+function resetView(){cxS=1;cxX=0;cxY=0;canvas.style.transform='';}
+
+// ══════ STATUS ══════
+function updateSt(){document.getElementById('stcounts').textContent=`${nodes.length} resources · ${connections.length} connections`;}
+function setMsg(m){document.getElementById('stmsg').textContent=m;}
+
+// ══════ KEYBOARD ══════
+document.addEventListener('keydown',e=>{
+  if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement.tagName))return;
+  if(e.key==='Escape'){setTool('select');deselectAll();closeDeploy();}
+  if(e.key==='Delete'||e.key==='Backspace')deleteSelected();
+  if(e.key==='c'||e.key==='C')setTool('connect');
+  if(e.key==='s'||e.key==='S')setTool('select');
+});
+updateSt();
+</script>
+</body>
+</html>
